@@ -25,23 +25,25 @@ jobs:
           pip install semgrep
 
       - name: Crear carpeta de reportes
-        run: |
-          mkdir -p reports
+        run: mkdir -p reports
 
-      - name: Ejecutar Semgrep (SAST)
+      - name: Ejecutar Semgrep
         run: |
           semgrep scan --config auto --json --output reports/semgrep-report.json . || true
 
-      - name: Escaneo con Trivy
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'table'
-          output: 'reports/trivy-report.txt'
-          exit-code: '0'
+      - name: Instalar Trivy
+        run: |
+          sudo apt-get install wget apt-transport-https gnupg lsb-release -y
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install trivy -y
 
-      - name: Subir reportes como artefacto
+      - name: Ejecutar escaneo con Trivy
+        run: |
+          trivy fs . > reports/trivy-report.txt || true
+
+      - name: Subir reportes
         uses: actions/upload-artifact@v4
         with:
           name: security-report
