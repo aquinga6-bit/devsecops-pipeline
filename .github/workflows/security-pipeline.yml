@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Descargar repositorio
         uses: actions/checkout@v4
 
@@ -25,21 +26,22 @@ jobs:
 
       - name: Crear carpeta de reportes
         run: |
-          mkdir reports
+          mkdir -p reports
 
-      - name: Ejecutar Semgrep
+      - name: Ejecutar Semgrep (SAST)
         run: |
-          semgrep scan --config auto --json --output reports/semgrep.json . || true
+          semgrep scan --config auto --json --output reports/semgrep-report.json . || true
 
       - name: Escaneo con Trivy
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          scan-type: fs
-          scan-ref: .
-          output: reports/trivy.txt
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          output: 'reports/trivy-report.txt'
           exit-code: '0'
 
-      - name: Guardar reportes
+      - name: Subir reportes como artefacto
         uses: actions/upload-artifact@v4
         with:
           name: security-report
